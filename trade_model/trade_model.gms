@@ -2,36 +2,47 @@
 *** define sets and parameters for trade exports and imports
 **********************************************************************
 SETS
-    ttot            'loaded times'
-    all_regi        'loaded regions'
-    teSETransp      'technologies for transporting SE' / shipping, pipeline /
+  ttot                                                                      'Loaded times'
+  all_regi                                                                  'Loaded regions'
+  teTranspMode                                                              'Technologies for transportation mode'          
+      / shipping, pipeline /
+  all_enty                                                                  'Quantities traded in the network topology'  
+      / pegas /
 ;
 
 alias(all_regi,regi,regi2,regi3);
-
-PARAMETERS
-    pm_Xport(ttot,all_regi)            "Export of traded commodity."
-    pm_Mport(ttot,all_regi)            "Import of traded commodity."
-;
+alias(all_enty,tradeSe);
 
 
 
 **********************************************************************
 *** load pooled export and import quantities from GDX files
 **********************************************************************
-$gdxIn "./input_data/pegas_Xports.gdx"
+PARAMETERS
+    pm_Xport(ttot,all_regi,all_enty)                                        'Export of traded commodity.'
+    pm_Mport(ttot,all_regi,all_enty)                                        'Import of traded commodity.'
+    p24_Xport_loaded(ttot,all_regi)                                         'Loaded export.'
+    p24_Mport_loaded(ttot,all_regi)                                         'Loaded import.'
+;
+
+$gdxIn './input_data/pegas_Xports.gdx'
 $load ttot = dim1
 $load all_regi = dim2
-$load pm_Xport=d
+$load p24_Xport_loaded=d
 $gdxIn
+
+pm_Xport(ttot,all_regi,'pegas') = p24_Xport_loaded(ttot,all_regi);
 
 display pm_Xport;
 
-$gdxIn "./input_data/pegas_Mports.gdx"
-$load pm_Mport=d
+$gdxIn './input_data/pegas_Mports.gdx'
+$load p24_Mport_loaded=d
 $gdxIn
 
+pm_Mport(ttot,all_regi,'pegas') = p24_Mport_loaded(ttot,all_regi);
+
 display pm_Mport;
+;
 
 
 
@@ -41,16 +52,16 @@ display pm_Mport;
 PARAMETERS M, X;
 
 PARAMETERS
-    total_trade_quant(ttot)             "Total amount of traded commodities";
+    total_trade_quant(ttot,all_enty)                                        'Total amount of traded commodities';
 
 loop(ttot,
-  M = sum(all_regi,pm_Mport(ttot,all_regi));
-  X = sum(all_regi,pm_Xport(ttot,all_regi));
+  M = sum(all_regi,pm_Mport(ttot,all_regi,'pegas'));
+  X = sum(all_regi,pm_Xport(ttot,all_regi,'pegas'));
   display M, X;
   if(X < M,
-    display "Less exported than imported!";
+    display 'Less exported than imported!';
   );
-  total_trade_quant(ttot) = min(M,X);
+  total_trade_quant(ttot,'pegas') = min(M,X);
 );
 
 
@@ -59,24 +70,27 @@ loop(ttot,
 *** define constraints: which regions are allowed to trade with which?
 **********************************************************************
 PARAMETERS
-    pm_constraints(all_regi,all_regi,teSETransp)    "which regions can trade with each other?"
-    pm_constraints_load1(all_regi,all_regi)
-    pm_constraints_load2(all_regi,all_regi)
+    p24_constraints(all_regi,all_regi,all_enty,teTranspMode)                'Which regions can trade with each other?'
+    p24_disallowed(all_regi,all_regi,all_enty,teTranspMode)                 'Opposite of p24_constraints'
+    p24_constraints_load1(all_regi,all_regi)
+    p24_constraints_load2(all_regi,all_regi)
 ;
 
-$gdxIn "./input_data/constraints_pipeline.gdx"
-$load pm_constraints_load1=d
+$gdxIn './input_data/constraints_pipeline.gdx'
+$load p24_constraints_load1=d
 $gdxIn
 
-pm_constraints(regi,regi2,"pipeline") = pm_constraints_load1(regi,regi2);
+p24_constraints(regi,regi2,'pegas','pipeline') = p24_constraints_load1(regi,regi2);
 
-$gdxIn "./input_data/constraints_shipping.gdx"
-$load pm_constraints_load2=d
+$gdxIn './input_data/constraints_shipping.gdx'
+$load p24_constraints_load2=d
 $gdxIn
 
-pm_constraints(regi,regi2,"shipping") = pm_constraints_load2(regi,regi2);
+p24_constraints(regi,regi2,'pegas','shipping') = p24_constraints_load2(regi,regi2);
 
-display pm_constraints;
+display p24_constraints;
+
+p24_disallowed(all_regi,all_regi,tradeSe,teTranspMode) = 1 - p24_constraints(all_regi,all_regi,tradeSe,teTranspMode);
 
 
 
@@ -84,16 +98,14 @@ display pm_constraints;
 *** define distances: how far apart are the regions?
 **********************************************************************
 PARAMETERS
-    pm_distance(all_regi,all_regi)    "how far apart are regions?"
+    p24_distance(all_regi,all_regi)                                         'How far apart are regions?'
 ;
 
-$gdxIn "./input_data/distance.gdx"
-$load pm_distance=d
+$gdxIn './input_data/distance.gdx'
+$load p24_distance=d
 $gdxIn
 
-display pm_distance;
-
-
+display p24_distance;
 
 
 
@@ -104,8 +116,8 @@ PARAMETERS d1, d2, diff;
 
 loop(regi,
   loop(regi2,
-    d1 = pm_distance(regi,regi2);
-    d2 = pm_distance(regi2,regi);
+    d1 = p24_distance(regi,regi2);
+    d2 = p24_distance(regi2,regi);
     diff = d2-d1
     display diff;
   );
@@ -114,41 +126,103 @@ loop(regi,
 
 
 **********************************************************************
+*** load prices from GDX file
+**********************************************************************
+PARAMETERS
+  pm_exportPrice(ttot,all_regi,all_enty)                                    'Export of traded commodity.'
+  pm_pvp_pegas(ttot)                                                        'Loaded pvp prices.'
+;
+
+***pm_exportPrice(ttot,regi,tradePe) = pm_pvp(ttot,tradePe);
+***pm_exportPrice(ttot,regi,tradeSe) = pm_SEPrice(ttot,regi,tradeSe);
+
+$gdxIn './input_data/pm_pvp_pegas.gdx'
+$load pm_pvp_pegas=d
+$gdxIn
+
+loop(regi,
+  pm_exportPrice(ttot,regi,'pegas') = pm_pvp_pegas(ttot);
+);
+
+
+
+**********************************************************************
 *** optimisation / disaggregation
 **********************************************************************
 PARAMETERS
-  cost_perdistance(teSETransp) "Transportation cost per distance"
+  p24_transpcost_perdistance(teTranspMode)                                'Transportation cost per distance'
       / pipeline 1
         shipping 3 /
-  cost_disallowed(teSETransp) "Transportation cost for disallowed trade partners"
+  p24_transpcost_disallowed(teTranspMode)                                 'Transportation cost for disallowed trade partners'
       / pipeline 5000
         shipping 300 /
 ;
 
+EQUATION  q24_objfunc_opttransp                                           'Objective function for optimisation inside trade module';
+VARIABLE  v24_objvar_opttransp                                            'Objective variable for optimisation inside trade module';
+
 POSITIVE VARIABLES
-  vm_shipmentquan(ttot, all_regi, all_regi, teSETransp)    'shipment quantities for different transportation modes'
+  v24_shipment_quan(ttot,all_regi,all_regi,all_enty,teTranspMode)         'Shipment quantities for different transportation modes'
+  v24_shipment_cost(ttot,all_regi,all_enty)                               'Total transportation cost'
+  v24_nonserve_cost(ttot,all_regi,all_enty)                               'Total cost arising from non-serviced transportation'
+;
+VARIABLES
+  v24_purchase_cost(ttot,all_regi,all_enty)                               'Total income or expense generated from trade'
+  vm_budget(ttot,all_regi)                                                'Budget of regions'
 ;
 
-VARIABLE  vm_shipmentcost                                   'total transportation cost' ;
+v24_shipment_quan.lo(ttot,all_regi,all_regi,all_enty,teTranspMode) = 0.0;
+v24_shipment_cost.lo(ttot,all_regi,all_enty) = 0.0;
+v24_nonserve_cost.lo(ttot,all_regi,all_enty) = 0.0;
 
 EQUATIONS
-  eq_cost                      "Total transportation cost"
-  eq_totquan(ttot)             "Total traded quantities"
-  eq_Xports(ttot, all_regi)    "Total exports"
-  eq_Mports(ttot, all_regi)    "Total imports"
+  q24_totMport_quan(ttot,all_regi,all_enty)                               'Total imports of each region must equal the demanded imports'
+  q24_shipment_cost(ttot,all_regi,all_enty)                               'Total transportation cost'
+  q24_nonserve_cost(ttot,all_regi,all_enty)                               'Total cost arising from non-serviced transportation'
+  q24_purchase_cost(ttot,all_regi,all_enty)                               'Total income or expense generated from trade'
+  qm_budget(ttot,all_regi)                                                'Budgets of regions'
 ;
 
-eq_cost.. vm_shipmentcost =e= sum((ttot, regi,regi2,teSETransp), vm_shipmentquan(ttot,regi,regi2,teSETransp) * ( cost_perdistance(teSETransp) * pm_distance(regi,regi2) + cost_disallowed(teSETransp) * (1-pm_constraints(regi,regi2,teSETransp)) ));
+q24_totMport_quan(ttot,regi,tradeSe)..
+    pm_Mport(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode)  );
 
-eq_totquan(ttot).. total_trade_quant(ttot) =e= sum((regi,regi2,teSETransp), vm_shipmentquan(ttot,regi,regi2,teSETransp));
+v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$sameAs(regi,regi2) = 0.0;
 
-eq_Xports(ttot, regi ).. sum((regi2,teSETransp), vm_shipmentquan(ttot,regi,regi2,teSETransp)) =l= pm_Xport(ttot, regi);
-eq_Mports(ttot, regi2).. sum((regi,teSETransp),  vm_shipmentquan(ttot,regi,regi2,teSETransp)) =l= pm_Mport(ttot, regi2);
+v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$(p24_constraints(regi,regi2,tradeSe,teTranspMode) lt 1.0) = 0.0;
+
+q24_shipment_cost(ttot,regi,tradeSe)..
+    v24_shipment_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * p24_transpcost_perdistance(teTranspMode) * p24_distance(regi,regi2)  );
+    
+q24_nonserve_cost(ttot,regi,tradeSe)..
+    v24_nonserve_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * 10000 * p24_transpcost_disallowed(teTranspMode) * p24_disallowed(regi,regi2,tradeSe,teTranspMode)  );
+    
+q24_purchase_cost(ttot,regi,tradeSe)..
+    v24_purchase_cost(ttot,regi,tradeSe)
+  =e=
+    sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi2,tradeSe)  )
+  - sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi ,tradeSe)  )
+;
+
+    
+qm_budget(ttot,regi)..
+    vm_budget(ttot,regi)
+  =e=
+    sum(tradeSe, v24_shipment_cost(ttot,regi,tradeSe))
+  + sum(tradeSe, v24_purchase_cost(ttot,regi,tradeSe))
+***  + sum(tradeSe, v24_nonserve_cost(ttot,regi,tradeSe))
+;
+
+
+q24_objfunc_opttransp..
+    v24_objvar_opttransp
+  =e= 
+    sum(  (ttot,regi), vm_budget(ttot,regi)  )
+;
 
 Model transport / all /;
 
-solve transport using lp minimizing vm_shipmentcost;
+solve transport using lp minimizing v24_objvar_opttransp;
 
-display vm_shipmentquan.l;
+display v24_shipment_quan.l;
 
-execute_unload './output_data/results.gdx', vm_shipmentquan;
+execute_unload './output_data/results.gdx', v24_shipment_quan;
