@@ -134,7 +134,7 @@ PARAMETERS
 ;
 
 ***pm_exportPrice(ttot,regi,tradePe) = pm_pvp(ttot,tradePe);
-***pm_exportPrice(tttot,regi,tradeSe) = pm_SEPrice(ttot,regi,tradeSe);
+***pm_exportPrice(ttot,regi,tradeSe) = pm_SEPrice(ttot,regi,tradeSe);
 
 $gdxIn './input_data/pm_pvp_pegas.gdx'
 $load pm_pvp_pegas=d
@@ -165,12 +165,18 @@ POSITIVE VARIABLES
   v24_shipment_quan(ttot,all_regi,all_regi,all_enty,teTranspMode)         'Shipment quantities for different transportation modes'
   v24_shipment_cost(ttot,all_regi,all_enty)                               'Total transportation cost'
   v24_nonserve_cost(ttot,all_regi,all_enty)                               'Total cost arising from non-serviced transportation'
+;
+VARIABLES
   v24_purchase_cost(ttot,all_regi,all_enty)                               'Total income or expense generated from trade'
   vm_budget(ttot,all_regi)                                                'Budget of regions'
 ;
 
+v24_shipment_quan.lo(ttot,all_regi,all_regi,all_enty,teTranspMode) = 0.0;
+v24_shipment_cost.lo(ttot,all_regi,all_enty) = 0.0;
+v24_nonserve_cost.lo(ttot,all_regi,all_enty) = 0.0;
+
 EQUATIONS
-  q24_totMport_quan(ttot,all_regi,tradeSe)                                'Total imports of each region must equal the demanded imports'
+  q24_totMport_quan(ttot,all_regi,all_enty)                               'Total imports of each region must equal the demanded imports'
   q24_shipment_cost(ttot,all_regi,all_enty)                               'Total transportation cost'
   q24_nonserve_cost(ttot,all_regi,all_enty)                               'Total cost arising from non-serviced transportation'
   q24_purchase_cost(ttot,all_regi,all_enty)                               'Total income or expense generated from trade'
@@ -178,21 +184,23 @@ EQUATIONS
 ;
 
 q24_totMport_quan(ttot,regi,tradeSe)..
-    pm_Mport(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode)  );
+    pm_Mport(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode)  );
 
-v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$( p24_disallowed(regi,regi2,tradeSe,teTranspMode) ) = 0.0;
+v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$sameAs(regi,regi2) = 0.0;
+
+v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$(p24_constraints(regi,regi2,tradeSe,teTranspMode) lt 1.0) = 0.0;
 
 q24_shipment_cost(ttot,regi,tradeSe)..
-    v24_shipment_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * p24_transpcost_perdistance(teTranspMode) * p24_distance(regi,regi2)  );
+    v24_shipment_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * p24_transpcost_perdistance(teTranspMode) * p24_distance(regi,regi2)  );
     
 q24_nonserve_cost(ttot,regi,tradeSe)..
-    v24_nonserve_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * p24_transpcost_disallowed(teTranspMode) * p24_disallowed(regi,regi2,tradeSe,teTranspMode)  );
+    v24_nonserve_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * 10000 * p24_transpcost_disallowed(teTranspMode) * p24_disallowed(regi,regi2,tradeSe,teTranspMode)  );
     
 q24_purchase_cost(ttot,regi,tradeSe)..
     v24_purchase_cost(ttot,regi,tradeSe)
   =e=
-    sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi2,tradeSe) )
-  - sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi,tradeSe) )
+    sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi2,tradeSe)  )
+  - sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi ,tradeSe)  )
 ;
 
     
@@ -200,8 +208,8 @@ qm_budget(ttot,regi)..
     vm_budget(ttot,regi)
   =e=
     sum(tradeSe, v24_shipment_cost(ttot,regi,tradeSe))
-***  + sum(tradeSe, v24_nonserve_cost(ttot,regi,tradeSe))
   + sum(tradeSe, v24_purchase_cost(ttot,regi,tradeSe))
+***  + sum(tradeSe, v24_nonserve_cost(ttot,regi,tradeSe))
 ;
 
 
