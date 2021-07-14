@@ -98,16 +98,16 @@ p24_disallowed(all_regi,all_regi,tradeSe,teTranspMode) = 1 - p24_constraints(all
 *** define distances: how far apart are the regions?
 **********************************************************************
 PARAMETERS
-    p24_distance(all_regi,all_regi)                                         'How far apart are regions?'
+    p24_distance(all_regi,all_regi)                                         'Distance per regions (in units of 1000km)'
 ;
 
 $gdxIn './input_data/distance.gdx'
 $load p24_distance=d
 $gdxIn
 
+p24_distance(regi,regi2) = p24_distance(regi,regi2)/1000;
+
 display p24_distance;
-
-
 
 **********************************************************************
 *** sanity check: is the distance matrix symmetric?
@@ -131,6 +131,7 @@ loop(regi,
 PARAMETERS
   pm_exportPrice(ttot,all_regi,all_enty)                                    'Export of traded commodity.'
   pm_pvp_pegas(ttot)                                                        'Loaded pvp prices.'
+  p_peprice_pegas(ttot,all_regi)                                            'Loaded peprice prices.'
 ;
 
 ***pm_exportPrice(ttot,regi,tradePe) = pm_pvp(ttot,tradePe);
@@ -140,24 +141,57 @@ $gdxIn './input_data/pm_pvp_pegas.gdx'
 $load pm_pvp_pegas=d
 $gdxIn
 
+$gdxIn './input_data/p_peprice_pegas.gdx'
+$load p_peprice_pegas=d
+$gdxIn
+
 loop(regi,
-  pm_exportPrice(ttot,regi,'pegas') = pm_pvp_pegas(ttot);
+  pm_exportPrice(ttot,regi,'pegas') = p_peprice_pegas(ttot,regi);
 );
 
 
 
 **********************************************************************
-*** optimisation / disaggregation
+*** Definition of the main characteristics set 'char':
 **********************************************************************
-PARAMETERS
-  p24_transpcost_perdistance(teTranspMode)                                'Transportation cost per distance'
-      / pipeline 1
-        shipping 3 /
-  p24_transpcost_disallowed(teTranspMode)                                 'Transportation cost for disallowed trade partners'
-      / pipeline 5000
-        shipping 300 /
+SET char          "Characteristics of transport technologies"
+/  
+  tech_stat       "Technology status: how close a technology is to market readiness. Scale: 0-3, with 0 'I can go out and build a GW plant today' to 3 'Still some research necessary'."
+  inco0           "Initial investment costs given in $(2015)/kW(output) capacity. Independent of distance."
+  inco0_d         "Initial investment costs given in $(2015)/kW(output) capacity. Per 1000km."
+  constrTme       "Construction time in years, needed to calculate turn-key cost premium compared to overnight costs"
+  eta             "Conversion efficieny, i.e. the amount of energy NOT lost in transportation. Independent of distance (e.g. conversion processes etc)."
+  eta_d           "Conversion efficieny, i.e. the amount of energy NOT lost in transportation. Per 1000km."
+  omf             "Fixed operation and maintenance costs given as a fraction of investment costs inco0. Independent of distance."
+  omf_d           "Fixed operation and maintenance costs given as a fraction of investment costs inco0_d. Per 1000km."
+  omv             "Variable operation and maintenance costs given in $(2015)/kWa energy production. Independent of distance."
+  omv_d           "Variable operation and maintenance costs given in $(2015)/kWa energy production. Per 1000km."
+  lifetime        "Given in years"
+/
 ;
 
+
+
+**********************************************************************
+*** load technology characteristics
+**********************************************************************
+PARAMETERS
+  p24_transpcost_perdistance(teTranspMode)                                'Transportation cost per distance (tr$2005/TWa/1000km)'
+      / pipeline 0.01
+        shipping 0.03 /
+  p24_transpcost_disallowed(teTranspMode)                                 'Transportation cost for disallowed trade partners (tr$2005/TWa/1000km)'
+      / pipeline 1
+        shipping 3 /
+;
+
+TABLE p24_dataglob_transp(char,all_enty,teTranspMode)                     'Transportation technology characteristics: investment costs, O&M costs, efficiency, ...'
+$include "./input_data/generisdata_transportation.prn"
+;
+
+
+**********************************************************************
+*** variables
+**********************************************************************
 EQUATION  q24_objfunc_opttransp                                           'Objective function for optimisation inside trade module';
 VARIABLE  v24_objvar_opttransp                                            'Objective variable for optimisation inside trade module';
 
@@ -165,6 +199,8 @@ POSITIVE VARIABLES
   v24_shipment_quan(ttot,all_regi,all_regi,all_enty,teTranspMode)         'Shipment quantities for different transportation modes'
   v24_shipment_cost(ttot,all_regi,all_enty)                               'Total transportation cost'
   v24_nonserve_cost(ttot,all_regi,all_enty)                               'Total cost arising from non-serviced transportation'
+  v24_transpCap(ttot,all_regi,all_regi,all_enty,teTranspMode)             'Net total capacities for transportation'
+  v24_transpDeltaCap(ttot,all_regi,all_regi,all_enty,teTranspMode)        'Capacity additions for transportation'
 ;
 VARIABLES
   v24_purchase_cost(ttot,all_regi,all_enty)                               'Total income or expense generated from trade'
@@ -175,6 +211,11 @@ v24_shipment_quan.lo(ttot,all_regi,all_regi,all_enty,teTranspMode) = 0.0;
 v24_shipment_cost.lo(ttot,all_regi,all_enty) = 0.0;
 v24_nonserve_cost.lo(ttot,all_regi,all_enty) = 0.0;
 
+
+
+**********************************************************************
+*** equations
+**********************************************************************
 EQUATIONS
   q24_totMport_quan(ttot,all_regi,all_enty)                               'Total imports of each region must equal the demanded imports'
   q24_shipment_cost(ttot,all_regi,all_enty)                               'Total transportation cost'
@@ -183,15 +224,19 @@ EQUATIONS
   qm_budget(ttot,all_regi)                                                'Budgets of regions'
 ;
 
+v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$sameAs(regi,regi2) = 0.0;
+v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$(p24_constraints(regi,regi2,tradeSe,teTranspMode) lt 1.0) = 0.0;
+
 q24_totMport_quan(ttot,regi,tradeSe)..
     pm_Mport(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode)  );
 
-v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$sameAs(regi,regi2) = 0.0;
-
-v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTranspMode)$(p24_constraints(regi,regi2,tradeSe,teTranspMode) lt 1.0) = 0.0;
+***q24_shipment_cost(ttot,regi,tradeSe)..
+***    v24_shipment_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * p24_transpcost_perdistance(teTranspMode) * p24_distance(regi,regi2)  );
 
 q24_shipment_cost(ttot,regi,tradeSe)..
-    v24_shipment_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * p24_transpcost_perdistance(teTranspMode) * p24_distance(regi,regi2)  );
+    v24_shipment_cost(ttot,regi,tradeSe)
+  =e=
+    sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * p24_transpcost_perdistance(teTranspMode) * p24_distance(regi,regi2)  );
     
 q24_nonserve_cost(ttot,regi,tradeSe)..
     v24_nonserve_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * 10000 * p24_transpcost_disallowed(teTranspMode) * p24_disallowed(regi,regi2,tradeSe,teTranspMode)  );
@@ -200,9 +245,8 @@ q24_purchase_cost(ttot,regi,tradeSe)..
     v24_purchase_cost(ttot,regi,tradeSe)
   =e=
     sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi2,tradeSe)  )
-  - sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi ,tradeSe)  )
+***  - sum(  (regi2,teTranspMode), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTranspMode) * pm_exportPrice(ttot,regi ,tradeSe)  )
 ;
-
     
 qm_budget(ttot,regi)..
     vm_budget(ttot,regi)
@@ -213,6 +257,10 @@ qm_budget(ttot,regi)..
 ;
 
 
+
+**********************************************************************
+*** optimisation
+**********************************************************************
 q24_objfunc_opttransp..
     v24_objvar_opttransp
   =e= 

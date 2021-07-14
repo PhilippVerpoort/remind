@@ -9,10 +9,14 @@ csv2gdx ./input_data/pegas_Xports.dat output=./input_data/pegas_Xports.gdx id=d 
 
 
 
-# dump and convert pvp prices
+# dump and convert prices
 gdxdump ./input_data/input.gdx Symb=pm_pvp | grep 'pegas' | sed "s/'.'pegas' /,/g" | sed "s/^'//g" | sed "s/, //g" > ./input_data/pm_pvp_pegas.dat
+gdxdump ./input_data/input.gdx Symb=p_peprice | grep "pegas" | sed "s/'.'pegas' /,/g" | sed "s/'\.'/,/g" | sed "s/'//g" | sed "s/, //g" > ./input_data/p_peprice_pegas.dat
+gdxdump ./input_data/input.gdx Symb=pm_seprice | grep "seh2" | sed "s/'.'seh2' /,/g" | sed "s/'\.'/,/g" | sed "s/'//g" | sed "s/, //g" > ./input_data/pm_seprice_seh2.dat
 
 csv2gdx ./input_data/pm_pvp_pegas.dat output=./input_data/pm_pvp_pegas.gdx id=d fieldSep=comma index=1 useHeader=y value=2
+csv2gdx ./input_data/p_peprice_pegas.dat output=./input_data/p_peprice_pegas.gdx id=d fieldSep=comma index=1,2 useHeader=y value=3
+csv2gdx ./input_data/pm_seprice_seh2.dat output=./input_data/pm_seprice_seh2.gdx id=d fieldSep=comma index=1,2 useHeader=y value=3
 
 
 
