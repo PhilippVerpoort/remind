@@ -1,4 +1,4 @@
-*** SOF ./input_data/generisdata_transportation.prn
+*** SOF ./input_data/generisdata_tradeTransp.prn
 $ontext
 IMPORTANT: all costs are now given in $2015! As long as the model runs in $2005, the values need to be converted in datainput.gms
 tech_stat   Technology status: how close a technology is to market readiness. Scale: 0-3, with 0 'I can go out and build a GW plant today' to 3 'Still some research necessary'.
@@ -25,4 +25,4 @@ omf_d                      0.03                 0.03
 omv                          15                   30
 omv_d                        15                   30
 lifetime                     35                   35
-*** EOF ./input_data/generisdata_transportation.prn
+*** EOF ./input_data/generisdata_tradeTransp.prn
