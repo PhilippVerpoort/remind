@@ -328,28 +328,20 @@ q24_tradeTransp_cost(ttot,regi,tradeSe)..
     v24_tradeTransp_cost(ttot,regi,tradeSe)
   =e=
     sum(regi2,
-      v24_deltaCap_tradeTransp(ttot,regi2,regi,tradeSe,'pipeline')
-    * (p24_dataglob_transp('inco0',tradeSe,'pipeline') + p24_dataglob_transp('inco0_d',tradeSe,'pipeline') * p24_distance(regi,regi2))
-    + v24_cap_tradeTransp(ttot,regi2,regi,tradeSe,'pipeline')
-    * (p24_dataglob_transp('omf',tradeSe,'pipeline') + p24_dataglob_transp('omf_d',tradeSe,'pipeline') * p24_distance(regi,regi2))
-    + v24_cap_tradeTransp(ttot,regi2,regi,tradeSe,'pipeline') * v24_shipment_quan(ttot,regi2,regi,tradeSe,'pipeline')
-    * (p24_dataglob_transp('omv',tradeSe,'pipeline') + p24_dataglob_transp('omv_d',tradeSe,'pipeline') * p24_distance(regi,regi2))
-    )
-  + sum(regi2,
-      v24_deltaCap_tradeTransp(ttot,regi2,regi,tradeSe,'shipping')
-    * (p24_dataglob_transp('inco0',tradeSe,'shipping') + p24_dataglob_transp('inco0_d',tradeSe,'shipping') * p24_distance(regi,regi2))
-    + v24_cap_tradeTransp(ttot,regi2,regi,tradeSe,'shipping')
-    * (p24_dataglob_transp('omf',tradeSe,'shipping') + p24_dataglob_transp('omf_d',tradeSe,'shipping') * p24_distance(regi,regi2))
-    + v24_cap_tradeTransp(ttot,regi2,regi,tradeSe,'shipping') * v24_shipment_quan(ttot,regi2,regi,tradeSe,'shipping')
-    * (p24_dataglob_transp('omv',tradeSe,'shipping') + p24_dataglob_transp('omv_d',tradeSe,'shipping') * p24_distance(regi,regi2))
+      v24_deltaCap_tradeTransp(ttot,regi2,regi,tradeSe,'pipeline') * (p24_dataglob_transp('inco0',tradeSe,'pipeline') + p24_dataglob_transp('inco0_d',tradeSe,'pipeline') * p24_distance(regi,regi2))
+    + v24_cap_tradeTransp(ttot,regi2,regi,tradeSe,'pipeline')      * (p24_dataglob_transp('omf'  ,tradeSe,'pipeline') + p24_dataglob_transp('omf_d'  ,tradeSe,'pipeline') * p24_distance(regi,regi2))
+    + v24_shipment_quan(ttot,regi2,regi,tradeSe,'pipeline')        * (p24_dataglob_transp('omv'  ,tradeSe,'pipeline') + p24_dataglob_transp('omv_d'  ,tradeSe,'pipeline') * p24_distance(regi,regi2))
+    + v24_deltaCap_tradeTransp(ttot,regi2,regi,tradeSe,'shipping_Xport') * (p24_dataglob_transp('inco0',tradeSe,'shipping_Xport') + p24_dataglob_transp('inco0_d',tradeSe,'shipping_Xport') * p24_distance(regi,regi2))
+    + v24_cap_tradeTransp(ttot,regi2,regi,tradeSe,'shipping_Xport')      * (p24_dataglob_transp('omf'  ,tradeSe,'shipping_Xport') + p24_dataglob_transp('omf_d'  ,tradeSe,'shipping_Xport') * p24_distance(regi,regi2))
+    + v24_shipment_quan(ttot,regi2,regi,tradeSe,'shipping')        * (p24_dataglob_transp('omv'  ,tradeSe,'shipping_vessels') + p24_dataglob_transp('omv_d'  ,tradeSe,'shipping_vessels') * p24_distance(regi,regi2))
     )
 ;
     
 qm_budget(ttot,regi)..
     vm_budget(ttot,regi)
   =e=
-    sum(tradeSe, v24_shipment_cost(ttot,regi,tradeSe))
-***    sum(tradeSe, v24_tradeTransp_cost(ttot,regi,tradeSe))
+***    sum(tradeSe, v24_shipment_cost(ttot,regi,tradeSe))
+    sum(tradeSe, v24_tradeTransp_cost(ttot,regi,tradeSe))
   + sum(tradeSe, v24_purchase_cost(ttot,regi,tradeSe))
 ***  + sum(tradeSe, v24_nonserve_cost(ttot,regi,tradeSe))
 ;
@@ -396,10 +388,10 @@ MODEL m24_tradeTransp
         q24_objfunc_opttransp
         
         q24_totMport_quan
-        q24_shipment_cost
+***        q24_shipment_cost
 ***        q24_nonserve_cost
         q24_purchase_cost
-***        q24_tradeTransp_cost
+        q24_tradeTransp_cost
         q24_cap_tradeTransp_pipeline
         q24_cap_tradeTransp_shipping_Mport
         q24_cap_tradeTransp_shipping_Xport

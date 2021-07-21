@@ -13,16 +13,16 @@ omv         Variable operation and maintenance costs given in $(2015)/kWa energy
 omv_d       Variable operation and maintenance costs given in $(2015)/kWa energy production. Per 1000km.s
 lifetime    Given in years
 $offtext
-                     pegas.pipeline        pegas.shipping
-tech_stat                     0                    0
-inco0                       950                 1350
-inco0_d                     950                 1350
-constrTme                     3                    3  
-eta                        0.99                 0.99
-eta_d                      0.99                 0.99
-omf                        0.03                 0.03
-omf_d                      0.03                 0.03
-omv                          15                   30
-omv_d                        15                   30
-lifetime                     35                   35
+                     pegas.pipeline        pegas.shipping_Xport    pegas.shipping_vessels
+tech_stat                     0                    0                    0
+inco0                        20                  167                    0
+inco0_d                     100                    0                    0
+constrTme                     3                    3                    0
+eta                        0.99                 0.99                    0.99
+eta_d                      0.99                 0.99                    0.99
+omf                        0.01                  3.3                    0
+omf_d                         0                    0                    0
+omv                           0                    0                    0
+omv_d                         0                    0                    2.3
+lifetime                     35                   35                    999
 *** EOF ./input_data/generisdata_tradeTransp.prn

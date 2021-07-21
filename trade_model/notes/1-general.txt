@@ -1,0 +1,40 @@
+================================================
+                  LNG SHIPPING
+================================================
+
+average LNG shipping cost (vessels): $0.14 / 1000miles / MMBtu
+
+(see file in directory stuff)
+
+$1 / (miles * 10^6Btu) = tr$ 0.01614 / (km * TWa)
+
+        $0.14   / (1000nmi * MMBtu)
+    = tr$0.0023 / (1000km  * TWa)
+    =   $2.3    / (1000km  * kWa)
+    
+================================================
+                  LNG LIQUIFICATION
+================================================    
+    
+https://ppiaf.org/documents/3694/download
+
+85
+194
+163
+61
+77
+62
+77
+226
+129
+avg: 120
+
+
+    mi$120 / Bcm / a
+    
+    energy density: 44MJ/m³
+    => 1 Bcm = 44 * 10^9 * 10^6 J = 44 x 10^15 J = 1.395million kWa
+    => mi$120/Bcm = $167/kWa
+    
+    
+The variable operating costs (OPEX) associated with operation and maintenance are usually small both for onshore as well as offshore terminals. In line with Foster Wheeler estimates used in the IDB study, we assume OPEX for onshore terminals to be 3% of CAPEX investments every year. FSRU’s require lower operation and maintenance costs and we assume 1% of CAPEX15
