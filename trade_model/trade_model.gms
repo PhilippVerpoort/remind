@@ -220,7 +220,7 @@ PARAMETERS
   p24_cap_absMaxGrowthRate(teTradeTransp)                                       'Absolute maximum yearly growth rate for trade transportation capacity (TWa)'
       / pipeline 0.0
         shipping_Mport 100.0
-        shipping_Xport 0.010 /
+        shipping_Xport 0.020 /
   p24_cap_relMaxGrowthRate(teTradeTransp)                                       'Relative maximum yearly growth rate for trade transportation capacity (percent)'
       / pipeline 0.0
         shipping_Mport 0.03
@@ -268,6 +268,7 @@ EQUATIONS
   q24_cap_tradeTransp_shipping_Xport(ttot,all_regi,all_enty)                    'Trade is limited by capacity for shipping.'
   q24_deltaCap_tradeTransp(ttot,all_regi,all_regi,all_enty,teTradeTransp)       'Trade transportation capacities from deltaCap.'
   q24_deltaCap_limit(ttot,all_regi,all_regi,all_enty,teTradeTransp)             'Limit deltaCap.'
+  q24_prohibit_MportXport(ttot,regi,tradeSe)                                    'Prohibit importers to be exessive exporters.'
   qm_budget(ttot,all_regi)                                                      'Budgets of regions'
 ;
 
@@ -306,6 +307,13 @@ q24_deltaCap_limit(ttot,regi,regi2,tradeSe,teTradeTransp)$(pm_ttot_val(ttot) gt 
   * p24_cap_relMaxGrowthRate(teTradeTransp)
   + p24_cap_absMaxGrowthRate(teTradeTransp)
   * (pm_ttot_val(ttot) - pm_ttot_val(ttot-1))
+;
+
+*** shipments constrained: importers cant be exporters
+q24_prohibit_MportXport(ttot,regi,tradeSe)$(pm_Mport(ttot,regi,tradeSe))..
+    sum((regi2,teTradeTranspModes), v24_shipment_quan(ttot,regi,regi2,tradeSe,teTradeTranspModes))
+  =l=
+    pm_Xport_effective(ttot,regi,tradeSe)
 ;
 
 *** shipment import equal to demands
@@ -397,6 +405,7 @@ MODEL m24_tradeTransp
         q24_cap_tradeTransp_shipping_Xport
         q24_deltaCap_tradeTransp
         q24_deltaCap_limit
+        q24_prohibit_MportXport
         qm_budget
     /
 ;
