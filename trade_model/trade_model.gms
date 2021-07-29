@@ -211,12 +211,6 @@ SET char          "Characteristics of transport technologies"
 *** load technology characteristics
 **********************************************************************
 PARAMETERS
-  p24_transpcost_perdistance(teTradeTranspModes)                                'Transportation cost per distance (tr$2005/TWa/1000km)'
-      / pipeline 0.001
-        shipping 0.03 /
-  p24_transpcost_disallowed(teTradeTranspModes)                                 'Transportation cost for disallowed trade partners (tr$2005/TWa/1000km)'
-      / pipeline 1
-        shipping 3 /
   p24_cap_absMaxGrowthRate(teTradeTransp)                                       'Absolute maximum yearly growth rate for trade transportation capacity (TWa)'
       / pipeline 0.0
         shipping_Mport 100.0
@@ -236,9 +230,6 @@ $include "./input_data/generisdata_tradeTransp.prn"
 **********************************************************************
 *** variables
 **********************************************************************
-EQUATION  q24_objfunc_opttransp                                                 'Objective function for optimisation inside trade module';
-VARIABLE  v24_objvar_opttransp                                                  'Objective variable for optimisation inside trade module';
-
 POSITIVE VARIABLES
   v24_shipment_quan(ttot,all_regi,all_regi,all_enty,teTradeTranspModes)         'Shipment quantities for different transportation modes'
   v24_shipment_cost(ttot,all_regi,all_enty)                                     'Total transportation cost'
@@ -259,18 +250,23 @@ VARIABLES
 **********************************************************************
 EQUATIONS
   q24_totMport_quan(ttot,all_regi,all_enty)                                     'Total imports of each region must equal the demanded imports'
-  q24_shipment_cost(ttot,all_regi,all_enty)                                     'Total transportation cost'
-  q24_nonserve_cost(ttot,all_regi,all_enty)                                     'Total cost arising from non-serviced transportation'
-  q24_purchase_cost(ttot,all_regi,all_enty)                                     'Total income or expense generated from trade'
-  q24_tradeTransp_cost(ttot,all_regi,all_enty)                                  'Cost incurring from trade transportation'
+  
   q24_cap_tradeTransp_pipeline(ttot,all_regi,all_regi,all_enty)                 'Trade is limited by capacity for pipelines.'
   q24_cap_tradeTransp_shipping_Mport(ttot,all_regi,all_enty)                    'Trade is limited by capacity for shipping.'
   q24_cap_tradeTransp_shipping_Xport(ttot,all_regi,all_enty)                    'Trade is limited by capacity for shipping.'
+  
   q24_deltaCap_tradeTransp(ttot,all_regi,all_regi,all_enty,teTradeTransp)       'Trade transportation capacities from deltaCap.'
   q24_deltaCap_limit(ttot,all_regi,all_regi,all_enty,teTradeTransp)             'Limit deltaCap.'
   q24_prohibit_MportXport(ttot,regi,tradeSe)                                    'Prohibit importers to be exessive exporters.'
+
+  q24_purchase_cost(ttot,all_regi,all_enty)                                     'Total income or expense generated from trade'
+  q24_tradeTransp_cost(ttot,all_regi,all_enty)                                  'Cost incurring from trade transportation'
   qm_budget(ttot,all_regi)                                                      'Budgets of regions'
 ;
+
+*** all shipments must add up to satisfy the demanded imports
+q24_totMport_quan(ttot,regi,tradeSe)..
+    pm_Mport(ttot,regi,tradeSe) =e= sum(  (regi2,teTradeTranspModes), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTradeTranspModes)  );
 
 *** shipments constrained by capacity
 q24_cap_tradeTransp_pipeline(ttot,regi,regi2,tradeSe)..
@@ -316,17 +312,7 @@ q24_prohibit_MportXport(ttot,regi,tradeSe)$(pm_Mport(ttot,regi,tradeSe))..
     pm_Xport_effective(ttot,regi,tradeSe)
 ;
 
-*** shipment import equal to demands
-q24_totMport_quan(ttot,regi,tradeSe)..
-    pm_Mport(ttot,regi,tradeSe) =e= sum(  (regi2,teTradeTranspModes), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTradeTranspModes)  );
-
-*** cost from shipments
-q24_shipment_cost(ttot,regi,tradeSe)..
-    v24_shipment_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTradeTranspModes), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTradeTranspModes) * p24_transpcost_perdistance(teTradeTranspModes) * p24_distance(regi,regi2)  );
-    
-q24_nonserve_cost(ttot,regi,tradeSe)..
-    v24_nonserve_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTradeTranspModes), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTradeTranspModes) * 10000 * p24_transpcost_disallowed(teTradeTranspModes) * p24_disallowed(regi,regi2,tradeSe,teTradeTranspModes)  );
-    
+*** cost from purchasing/buying
 q24_purchase_cost(ttot,regi,tradeSe)..
     v24_purchase_cost(ttot,regi,tradeSe) =e= sum(  (regi2,teTradeTranspModes), v24_shipment_quan(ttot,regi2,regi,tradeSe,teTradeTranspModes) * pm_exportPrice(ttot,regi2,tradeSe)  )
 ;
@@ -347,13 +333,12 @@ q24_tradeTransp_cost(ttot,regi,tradeSe)..
     )
 ;
 
+*** total budget from purchasing cost plus transportation cost
 qm_budget(ttot,regi)..
     vm_budget(ttot,regi)
   =e=
-***    sum(tradeSe, v24_shipment_cost(ttot,regi,tradeSe))
     sum(tradeSe, v24_tradeTransp_cost(ttot,regi,tradeSe))
   + sum(tradeSe, v24_purchase_cost(ttot,regi,tradeSe))
-***  + sum(tradeSe, v24_nonserve_cost(ttot,regi,tradeSe))
 ;
 
 
@@ -387,6 +372,9 @@ v24_shipment_quan.fx(ttot,regi,regi2,tradeSe,teTradeTranspModes)$sameAs(regi,reg
 **********************************************************************
 *** optimisation
 **********************************************************************
+EQUATION  q24_objfunc_opttransp                                                 'Objective function for optimisation inside trade module';
+VARIABLE  v24_objvar_opttransp                                                  'Objective variable for optimisation inside trade module';
+
 q24_objfunc_opttransp..
     v24_objvar_opttransp
   =e= 
@@ -395,23 +383,29 @@ q24_objfunc_opttransp..
 
 MODEL m24_tradeTransp
     /
-        q24_objfunc_opttransp
-        
         q24_totMport_quan
-***        q24_shipment_cost
-***        q24_nonserve_cost
-        q24_purchase_cost
-        q24_tradeTransp_cost
+        
         q24_cap_tradeTransp_pipeline
         q24_cap_tradeTransp_shipping_Mport
         q24_cap_tradeTransp_shipping_Xport
+        
         q24_deltaCap_tradeTransp
         q24_deltaCap_limit
         q24_prohibit_MportXport
+        
+        q24_purchase_cost
+        q24_tradeTransp_cost
         qm_budget
+        
+        q24_objfunc_opttransp
     /
 ;
 
 SOLVE m24_tradeTransp USING lp MINIMIZING v24_objvar_opttransp;
 
+
+
+**********************************************************************
+*** save results
+**********************************************************************
 execute_unload './output_data/results.gdx', v24_shipment_quan, v24_cap_tradeTransp, v24_deltaCap_tradeTransp;
