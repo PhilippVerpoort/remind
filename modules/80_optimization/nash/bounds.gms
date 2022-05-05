@@ -17,7 +17,7 @@ $endif.emiopt
 *ML* in nash with permit allocation only total budgets are meaningful; allowing permit trade
 *only for the initial policy period avoids indeterminacy, hence numerical problems
 loop(ttot$(ttot.val ne cm_startyear),
-    vm_Xport.fx(ttot,regi,"perm")$(cm_emiscen eq 6) = 0;
-    vm_Mport.fx(ttot,regi,"perm")$(cm_emiscen eq 6) = 0 ;
+    vm_XportMrkt.fx(ttot,regi,"perm")$(cm_emiscen eq 6) = 0;
+    vm_MportMrkt.fx(ttot,regi,"perm")$(cm_emiscen eq 6) = 0 ;
 );
 *** EOF ./modules/80_optimization/nash/bounds.gms

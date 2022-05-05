@@ -28,7 +28,6 @@ teNoLearn(te)   = not teLearn(te);
 teEtaConst(te)  = not teEtaIncr(te);
 teNoCCS(te)     = not teCCS(te);
 
-trade(enty)          = tradePe(enty) + tradeSe(enty) + tradeMacro(enty);
 emi(enty)            = emiTe(enty) + emiMac(enty) + emiExog(enty); 
 emiMacMagpie(enty)   = emiMacMagpieCH4(enty) + emiMacMagpieN2O(enty) + emiMacMagpieCO2(enty);
 emiMacExo(enty)      = emiMacExoCH4(enty) + emiMacExoN2O(enty);
@@ -122,6 +121,20 @@ in_below_putty(in)$cesOut2cesIn_below(ppf_putty,in) = YES;
 
 *** Aliasing of mappings is not available in all GAMS versions
 cesOut2cesIn2(out,in) = cesOut2cesIn(out,in);
+
+
+*** Access to trade markets
+loop( all_regi,
+    loop( openMrkts,
+        access2mrkts(all_regi,openMrkts) = yes,
+    )
+)
+
+
+*** Traded goods from markets
+trade(all_enty)$mrkts2tradedGoods(mrktsTrade,all_enty) = YES;
+tradePool(all_enty)$mrkts2tradedGoods(mrktsPool,all_enty) = YES;
+tradePoolPE(all_enty)$mrkts2tradedGoods(mrktsPoolPE,all_enty) = YES;
 
 
 *** Computing the reference complentary factors

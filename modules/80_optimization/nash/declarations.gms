@@ -8,44 +8,44 @@
 
 parameter
 *LB* parameters for ajustments within one iteration. These cause price anticipation
-p80_etaXp(all_enty)                         "Parameter governing price anticipation on commodity markets"
+p80_etaXp(mrktsTrade)                       "Parameter governing price anticipation on commodity markets"
 
 
 *LB* parameters for ajustments between different iterations
-p80_etaLT(all_enty)                         "long term price ajustment elasticity " 
-p80_etaST(all_enty)                         "short term price ajustment elasticity" 
+p80_etaLT(mrktsTrade)                       "long term price ajustment elasticity " 
+p80_etaST(mrktsTrade)                       "short term price ajustment elasticity" 
 
 *AJS*  adjustment costs between iterations
-p80_etaAdj(all_enty)                        "Adjustment costs for changes of trade pattern between iterations"
+p80_etaAdj(mrktsTrade)                      "Adjustment costs for changes of trade pattern between iterations"
 
 ***prices
-p80_pvp_itr(ttot,all_enty,iteration)        "Price on commodity markets per iteration", 
-p80_pvpFallback(ttot,all_enty)              "Helper parameter. Price path from input/prices_NASH.inc. Only used if reading prices from gdx fails.",
+p80_pvp_itr(ttot,mrktsTrade,iteration)      "Price on commodity markets per iteration", 
+p80_pvpFallback(ttot,mrktsTrade)            "Helper parameter. Price path from input/prices_NASH.inc. Only used if reading prices from gdx fails.",
 
-p80_normalizeLT(all_enty)                   "Aggregated intertemporal  market volume", 
-p80_normalize0(ttot,all_regi,all_enty)      "Normalization parameter for market volume"
+p80_normalizeLT(mrktsTrade)                 "Aggregated intertemporal  market volume", 
+p80_normalize0(ttot,all_regi,mrktsTrade)    "Normalization parameter for market volume"
 
 ***parameter containing the respective level values from last iteration (the first set of values taken from gdx in the first iteration, respectively)
-p80_Mport0(tall,all_regi,all_enty)          "Imports in last iteration"
-p80_surplus(tall,all_enty,iteration)        "Surplus on commodity market", 
-p80_defic_trade(all_enty)                   "Surplus in monetary terms over all times on commodity markets [trillion US$2005]", 
+p80_MportMrkt0(tall,all_regi,mrktsTrade)    "Imports in last iteration"
+p80_surplus(tall,mrktsTrade,iteration)      "Surplus on commodity market", 
+p80_defic_trade(mrktsTrade)                 "Surplus in monetary terms over all times on commodity markets [trillion US$2005]", 
 p80_defic_sum(iteration)                    "Surplus in monetary terms over all times on all commodity markets combined [trillion US$2005] (NOTE: to compare this number with the Negishi defic_sum, divide by around 100)", 
 p80_defic_sum_rel(iteration)                "Surplus monetary value over all times on all commodity markets combined, normalized to consumption [%]",
 
 *LB* diagnostic parameters 
-p80_etaLT_correct(all_enty,iteration)       "long term price correction factor in percent"
-p80_etaST_correct(tall,all_enty,iteration)  "short term price correction factor in percent"
+p80_etaLT_correct(mrktsTrade,iteration)      "long term price correction factor in percent"
+p80_etaST_correct(tall,mrktsTrade,iteration) "short term price correction factor in percent"
 
-p80_etaST_correct_safecopy(tall,all_enty,iteration)       "auxiliary parameter to remember short term price correction factor in percent, before new convergence adjustments"
-o80_counter_iteration_trade_ttot(ttot,all_enty,iteration) "auxiliary parameter to display in which iteration and for which item (ttot, trade) additional convergence measures were taken"
-o80_trackSurplusSign(ttot,all_enty,iteration)             "auxiliary parameter to track how long the surplus for an item (ttot, trade) had the same sign over iterations"
-o80_SurplusOverTolerance(ttot,all_enty,iteration)         "auxiliary parameter to track in which iterations which item surpassed the tolerance (positive/negative)"
+p80_etaST_correct_safecopy(tall,mrktsTrade,iteration)       "auxiliary parameter to remember short term price correction factor in percent, before new convergence adjustments"
+o80_counter_iteration_trade_ttot(ttot,mrktsTrade,iteration) "auxiliary parameter to display in which iteration and for which item (ttot, trade) additional convergence measures were taken"
+o80_trackSurplusSign(ttot,mrktsTrade,iteration)             "auxiliary parameter to track how long the surplus for an item (ttot, trade) had the same sign over iterations"
+o80_SurplusOverTolerance(ttot,mrktsTrade,iteration)         "auxiliary parameter to track in which iterations which item surpassed the tolerance (positive/negative)"
 
 
-p80_surplusMax(all_enty,iteration,tall)    "Diagnostics for Nash: Worst residual market surplus until given year, absolute value. [Units: TWa, trillion Dollar, GtC]"
-p80_surplusMax2100(all_enty)               "Worst residual market surplus until 2100, absolute value. [Units: TWa, trillion Dollar, GtC]"
-p80_surplusMaxRel(all_enty,iteration,tall) "Diagnostics for Nash: Worst residual market surplus until given year, in per cent."
-p80_surplusMaxTolerance(all_enty)          "maximum tolerable residual value of absolute market surplus in 2100."
+p80_surplusMax(mrktsTrade,iteration,tall)  "Diagnostics for Nash: Worst residual market surplus until given year, absolute value. [Units: TWa, trillion Dollar, GtC]"
+p80_surplusMax2100(mrktsTrade)             "Worst residual market surplus until 2100, absolute value. [Units: TWa, trillion Dollar, GtC]"
+p80_surplusMaxRel(mrktsTrade,iteration,tall) "Diagnostics for Nash: Worst residual market surplus until given year, in per cent."
+p80_surplusMaxTolerance(mrktsTrade)        "maximum tolerable residual value of absolute market surplus in 2100."
 
 p80_taxrev0(tall,all_regi)                 "vm_taxrev from last iteration"   
 p80_taxrev_agg(tall,iteration)             "vm_taxrev globally from last iteration"
@@ -55,7 +55,7 @@ p80_handle(all_regi)                       "parallel mode handle parameter"
 p80_repy(all_regi,solveinfo80)             "summary report from solver "
 p80_repy_iteration(all_regi,solveinfo80,iteration) "summary report from solver in iteration"
 p80_repyLastOptim(all_regi,solveinfo80)    "p80_repy from last iteration"
-p80_messageFailedMarket(tall,all_enty)     "nash display helper"
+p80_messageFailedMarket(tall,mrktsTrade)   "nash display helper"
 p80_messageShow(convMessage80)             "nash display helper"
 p80_trackConsecFail(all_regi)              "Parameter to keep track of consecutive solve failurs of regions in Nash mode."
 
@@ -83,7 +83,7 @@ p80_eoWeights_fix(all_regi)                "default and fallback weighting facto
 p80_SolNonOpt(all_regi)                    "solve status"
 p80_taxrev_dev(ttot,all_regi)              "deviation of tax revenue normalized by GDP if taxes did not converge"
 
-pm_fuExtrForeign(ttot,all_regi,all_enty,rlf) "foreign fuel extraction"
+pm_fuExtrForeign(ttot,all_regi,mrktsTrade,rlf) "foreign fuel extraction"
 p80_taxrev_dev(ttot,all_regi)                "deviation of tax revenue in percent GDP"
 ;
 

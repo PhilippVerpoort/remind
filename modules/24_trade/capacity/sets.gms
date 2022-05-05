@@ -10,6 +10,7 @@
 ***                               GENERAL TRADE SETS
 ***-------------------------------------------------------------------------------
 SETS
+
 trade(all_enty)                             "All traded commodities"
 /
 /
@@ -38,6 +39,7 @@ tradeCap(all_enty)                          "Commodities traded via capacity mod
 /
   pegas
 /
+;
 
 ***-------------------------------------------------------------------------------
 ***                               TRADE MODEL SETS

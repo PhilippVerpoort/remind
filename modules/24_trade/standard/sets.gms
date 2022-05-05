@@ -6,34 +6,98 @@
 *** |  Contact: remind@pik-potsdam.de
 *** SOF ./modules/24_trade/standard/sets.gms
 
-sets
-trade(all_enty)             "All traded commodities"
+***-------------------------------------------------------------------------------
+***                               GENERAL TRADE SETS
+***-------------------------------------------------------------------------------
+SETS
+mrktsTrade                                  "Trade markets"
+/
+  good,
+  perm,
+
+  peoil,
+  pecoal,
+  peur,
+  pebiolc,
+  
+  pegas_lng,
+  pegas_ref_eur
+/
+
+mrktsPool                                   "Trade markets operating in pool-trade mode"
+/
+  good,
+  perm,
+
+  peoil,
+  pecoal,
+  peur,
+  pebiolc,
+  
+  pegas_lng
+/
+
+mrktsPoolPE                                 "PE trade markets operating in pool-trade mode"
+/
+  peoil,
+  pecoal,
+  peur,
+  pebiolc,
+  
+  pegas_lng
+/
+
+mrktsBilat                                  "Trade markets with bilateral price agreements"
 /
 /
 
-tradeMacro(all_enty)        "Traded macro-economic commodities"
+mrkts2tradedGoods(mrktsTrade,all_enty)      "Mapping markets to traded goods"
 /
-    good, 
-    perm
-/
-
-tradePe(all_enty)           "Traded primary energy commodities"
-/
-    peoil, 
-    pecoal, 
-    pegas, 
-    peur, 
-    pebiolc
-/
-
-tradeSe(all_enty)           "Traded secondary energy commodities"
-/
-    null
+  good.good, 
+  perm.perm,
+  
+  peoil.peoil,
+  pecoal.pecoal,
+  peur.peur,
+  pebiolc.pebiolc,
+  
+  pegas_lng.pegas,
+  pegas_ref_deu.pegas
 /
 
-tradeCap(all_enty)          "Commodities traded via capacity mode."
+mrktsOpen(mrktsTrade)                       "Markets open to all regions by default"
 /
-    null
+  good,
+  perm,
+
+  peoil,
+  pecoal,
+  peur,
+  pebiolc,
+  
+  pegas_lng
+/
+
+access2mrkts(all_regi,mrktsTrade)           "Other access to markets"
+/
+  EUR.pegas_ref_eur,
+  REF.pegas_ref_eur
+/
+
+trade(all_enty)                             "All traded commodities (automatically calculated from mrkts2tradedGoods)"
+/
+/
+
+tradePool(all_enty)                         "All commodities traded in pool-trade mode (automatically calculated from mrkts2tradedGoods)"
+/
+/
+
+tradePoolPE(all_enty)                       "All PE commodities traded in pool-trade mode (automatically calculated from mrkts2tradedGoods)"
+/
+/
+
+tradeBilat(all_enty)                        "All commodities traded in bilateral mode (automatically calculated from mrkts2tradedGoods)"
+/
 /
 ;
 

@@ -16,11 +16,11 @@ parameters
 ***----------------------------------------------------------------------------------------
 ***--------------------------------------------------MACRO module--------------------------
 ***prices
-pm_pvp(ttot,all_enty)                                "Price on commodity markets",
-p_pvpRef(ttot,all_enty)                              "Price on commodity markets - imported from REF gdx",
-pm_pvpRegi(ttot,all_regi,all_enty)                   "prices of traded commodities - regional. only used for permit trade"
+pm_pvp(ttot,mrktsTrade)                              "Price on commodity markets",
+p_pvpRef(ttot,mrktsTrade)                            "Price on commodity markets - imported from REF gdx",
+pm_pvpRegi(ttot,all_regi,mrktsTrade)                 "prices of traded commodities - regional. only used for permit trade"
 
-p_pvpRegiBeforeStartYear(ttot,all_regi,all_enty)     "prices of traded commodities before start year - regional. only used for permit trade"
+p_pvpRegiBeforeStartYear(ttot,all_regi,mrktsTrade)   "prices of traded commodities before start year - regional. only used for permit trade"
 pm_pricePerm(ttot)                                   "permit price in special case when the marginal is only found in box module"
 
 p_share(ttot,all_regi,all_in,all_in)                 "share of production factors"

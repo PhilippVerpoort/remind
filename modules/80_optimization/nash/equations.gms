@@ -9,39 +9,47 @@
 *gl*
 *' For Nash solution: intertemporal trade balance must be zero (couple in agricultural trade costs: pvp deflator * net export)
 q80_budg_intertemp(regi)..
-0 =e= pm_nfa_start(regi) * pm_pvp("2005","good")
-  + SUM(ttot$(ttot.val ge 2005),
-     pm_ts(ttot)
-      * (
-        SUM(trade$(NOT tradeSe(trade) and NOT tradeCap(trade)),
-              (vm_Xport(ttot,regi,trade) - vm_Mport(ttot,regi,trade)) * pm_pvp(ttot,trade)
-           * ( 1 +  sm_fadeoutPriceAnticip*p80_etaXp(trade)
-                   * ( (pm_Xport0(ttot,regi,trade) - p80_Mport0(ttot,regi,trade)) - (vm_Xport(ttot,regi,trade) - vm_Mport(ttot,regi,trade))
-                   - p80_taxrev0(ttot,regi)$(ttot.val gt 2005)$(sameas(trade,"good")) + vm_taxrev(ttot,regi)$(ttot.val gt 2005)$(sameas(trade,"good"))
-		     )
-                   / (p80_normalize0(ttot,regi,trade) + sm_eps)
-              )
+    0
+  =e=
+    pm_nfa_start(regi) * pm_pvp("2005","good")
+  + sum(ttot$(ttot.val ge 2005),
+      pm_ts(ttot) * (
+        SUM(mrktsPool,
+          (vm_XportMrkt(ttot,regi,mrktsPool) - vm_MportMrkt(ttot,regi,mrktsPool)) * pm_pvp(ttot,mrktsPool)
+        * ( 1 + sm_fadeoutPriceAnticip*p80_etaXp(mrktsPool)
+          * (
+              (pm_XportMrkt0(ttot,regi,mrktsPool) - p80_MportMrkt0(ttot,regi,mrktsPool))
+            - (vm_XportMrkt(ttot,regi,mrktsPool)  - vm_MportMrkt(ttot,regi,mrktsPool))
+            - p80_taxrev0(ttot,regi)$(ttot.val gt 2005)$(sameas(mrktsPool,"good"))
+            + vm_taxrev(ttot,regi)$(ttot.val gt 2005)$(sameas(mrktsPool,"good"))
+          )
+          / (p80_normalize0(ttot,regi,mrktsPool) + sm_eps)
+          )
         )
       + vm_capacityTradeBalance(ttot,regi)
 	  + pm_pvp(ttot,"good") * pm_NXagr(ttot,regi)
       )
-    );
+    )
+;
 
 
 *' quadratic adjustment costs, penalizing deviations from the trade pattern of the last iteration.
 q80_costAdjNash(ttot,regi)$( ttot.val ge cm_startyear ) ..
-  vm_costAdjNash(ttot,regi) 
-  =e= sum(trade$(NOT tradeSe(trade)),
-        pm_pvp(ttot,trade) 
-      * p80_etaAdj(trade)
-      * ( (pm_Xport0(ttot,regi,trade) - p80_Mport0(ttot,regi,trade)) 
-        - (vm_Xport(ttot,regi,trade)  - vm_Mport(ttot,regi,trade))
-        )
-      * ( (pm_Xport0(ttot,regi,trade) - p80_Mport0(ttot,regi,trade)) 
-        - (vm_Xport(ttot,regi,trade)  - vm_Mport(ttot,regi,trade))
-        )
-      / (p80_normalize0(ttot,regi,trade) + sm_eps)
+    vm_costAdjNash(ttot,regi) 
+  =e=
+    sum(mrktsPool,
+      pm_pvp(ttot,mrktsPool)
+    * p80_etaAdj(mrktsPool)
+    * (
+        (pm_XportMrkt0(ttot,regi,mrktsPool) - p80_MportMrkt0(ttot,regi,mrktsPool)) 
+      - (vm_XportMrkt(ttot,regi,mrktsPool)  - vm_MportMrkt(ttot,regi,mrktsPool))
       )
+    * (
+        (pm_XportMrkt0(ttot,regi,mrktsPool) - p80_MportMrkt0(ttot,regi,mrktsPool)) 
+      - (vm_XportMrkt(ttot,regi,mrktsPool)  - vm_MportMrkt(ttot,regi,mrktsPool))
+      )
+      / (p80_normalize0(ttot,regi,mrktsPool) + sm_eps)
+    )
 ;
 
 *** mlb 20150324

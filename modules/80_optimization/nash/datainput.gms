@@ -7,7 +7,7 @@
 *** SOF ./modules/80_optimization/nash/datainput.gms
 pm_w(regi) = 1;
 
-o80_trackSurplusSign(ttot,trade,iteration)$(NOT tradeSe(trade)) = 0;
+o80_trackSurplusSign(ttot,mrktsPool,iteration) = 0;
 
 *MLB 20130920* initialization only
 pm_cumEff(t, regi, in) = 100;
@@ -23,13 +23,13 @@ cm_iteration_max = 100;
 
  if(cm_nash_autoconverge eq 1,
 ***convergences thresholds - coarse 
-  p80_surplusMaxTolerance(tradePe) = 1.5 * sm_EJ_2_TWa;          !! convert EJ/yr into internal unit TWa
+  p80_surplusMaxTolerance(mrktsPoolPe) = 1.5 * sm_EJ_2_TWa;          !! convert EJ/yr into internal unit TWa
   p80_surplusMaxTolerance("good") = 100/1000;                  !! in internal unit, trillion Dollar
   p80_surplusMaxTolerance("perm") = 300 * 12/44 / 1000;                !! convert MtCO2eq into internal unit GtC
    );
  if(cm_nash_autoconverge eq 2,
 ***convergences thresholds - fine 
-  p80_surplusMaxTolerance(tradePe) = 0.3 * sm_EJ_2_TWa;          !! convert EJ/yr into internal unit TWa
+  p80_surplusMaxTolerance(mrktsPoolPe) = 0.3 * sm_EJ_2_TWa;          !! convert EJ/yr into internal unit TWa
   p80_surplusMaxTolerance("good") = 20/1000;                  !! in internal unit, trillion Dollar
   p80_surplusMaxTolerance("perm") = 70 * 12/44 / 1000 ;                !! convert MtCO2eq into internal unit GtC
    );
@@ -37,21 +37,21 @@ cm_iteration_max = 100;
     
 
 *Nash adjustment costs. Involves a trade-off: If set too low, markets jump far away from clearance. Set too high, changes in trade patten over iterations are very slow, convergence takes many many iterations. Default value around 150
-p80_etaAdj(tradePe) = 80; 
+p80_etaAdj(mrktsPoolPe) = 80; 
 p80_etaAdj("good") = 100;
 p80_etaAdj("perm") = 10;
 
 *LB* parameter for nash price algorithm within the optimization. 
-p80_etaXp(tradePe) = 0.1;
+p80_etaXp(mrktsPoolPe) = 0.1;
 p80_etaXp("good") = 0.1;
 p80_etaXp("perm") = 0.2;
 
 *LB* parameter for Nash price algorithm between different iterations
-p80_etaLT(trade) = 0;
+p80_etaLT(mrktsPool) = 0;
 p80_etaLT("perm") = 0.03;
 
 ***These parameters are pretty sensitive. If market surpluses diverge, try higher values (up to 1). If surpluses oscillate, try lower values. 
-p80_etaST(tradePe) = 0.3;
+p80_etaST(mrktsPoolPe) = 0.3;
 p80_etaST("good") = 0.25;
 p80_etaST("perm") = 0.3;
 
@@ -69,16 +69,16 @@ s80_converged = 0;
 s80_fadeoutPriceAnticipStartingPeriod = 0;
 sm_fadeoutPriceAnticip = 1;
 *AJS*technical stuff. We want GAMS to import values for the following variables/parameters from the gdx, it would not do that unless you set them a (any) value beforehand.
-pm_pvp(ttot,trade)$(ttot.val ge 2005) = NA;
-p80_pvpFallback(ttot,trade)$(ttot.val ge 2005) = NA;
-pm_Xport0(ttot,regi,trade)$(ttot.val ge 2005) = NA;
-p80_Mport0(ttot,regi,trade)$(ttot.val ge 2005) = NA;
-vm_Xport.l(ttot,regi,trade)$(ttot.val ge 2005) = NA;
-vm_Mport.l(ttot,regi,trade)$(ttot.val ge 2005) = NA;
+pm_pvp(ttot,mrktsPool)$(ttot.val ge 2005) = NA;
+p80_pvpFallback(ttot,mrktsPool)$(ttot.val ge 2005) = NA;
+pm_Xport0(ttot,regi,mrktsPool)$(ttot.val ge 2005) = NA;
+p80_Mport0(ttot,regi,mrktsPool)$(ttot.val ge 2005) = NA;
+vm_Xport.l(ttot,regi,mrktsPool)$(ttot.val ge 2005) = NA;
+vm_Mport.l(ttot,regi,mrktsPool)$(ttot.val ge 2005) = NA;
 vm_cons.l(ttot,regi)$(ttot.val ge 2005) = 0;
 vm_emiTe.l(ttot,regi,"CO2")$(ttot.val ge 2005) = NA;  
-vm_fuExtr.l(ttot,regi,tradePe,rlf)$(ttot.val ge 2005) = 0;
-vm_prodPe.l(ttot,regi,tradePe)$(ttot.val ge 2005) = 0;    
+vm_fuExtr.l(ttot,regi,mrktsPoolPe,rlf)$(ttot.val ge 2005) = 0;
+vm_prodPe.l(ttot,regi,mrktsPoolPe)$(ttot.val ge 2005) = 0;    
 vm_taxrev.l(ttot,regi)$(ttot.val gt 2005) = 0;
 vm_co2eq.l(ttot,regi) = 0;
 vm_emiAll.l(ttot,regi,enty) = 0;
@@ -88,7 +88,7 @@ qm_co2eqCum.m(regi) = 0;
 q80_budgetPermRestr.m(regi) = 0;
 
 ***read in price paths as fallback option
-***p80_pvpFallback(ttot,trade) = 0;
+***p80_pvpFallback(ttot,mrktsPool) = 0;
 $include "./modules/80_optimization/nash/input/prices_NASH.inc";
 
 *** read in hard coded weights only to be used if due to infeasibilities internal computation of weights (postsolve) does not work

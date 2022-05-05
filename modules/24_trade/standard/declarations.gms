@@ -10,7 +10,7 @@
 ***-------------------------------------------------------------------------------
 parameters
 pm_tradecostgood(all_regi)                  "Trade costs (final good)."
-pm_Xport0(tall,all_regi,all_enty)           "Reference level value of export." 
+pm_XportMrkt0(tall,all_regi,tradeMrkts)     "Reference level value of export." 
 pm_IO_trade(tall,all_regi,all_enty,char)    "Energy trade bounds based on IEA data."
 p24_Mport2005correct(all_regi,all_enty)     "Correction factor to match fossil supply and internal region energy demand in the initial year"
 
@@ -23,8 +23,18 @@ pm_XPortsPrice(tall,all_regi,tradeSe)              "Secondary energy export pric
 positive VARIABLES
 vm_Xport(tall,all_regi,all_enty)            "Export of traded commodity."
 vm_Mport(tall,all_regi,all_enty)            "Import of traded commodity."
+vm_XportMrkt(tall,all_regi,tradeMrkts)      "Export of traded commodity in market."
+vm_MportMrkt(tall,all_regi,tradeMrkts)      "Import of traded commodity in market."
 vm_costTradeCap(ttot,all_regi,all_enty)     "Trade technology and transportation cost"
 vm_capacityTradeBalance(tall,all_regi)      "Capacity trade balance term"
+;
+
+***-----------------------------------------------------------------------------
+***                                   EQUATIONS
+***-----------------------------------------------------------------------------
+EQUATIONS
+  q24_totalMport(ttot,all_regi,trade)       "Total trade amounts from sum of respective markets"
+  q24_totalXport(ttot,all_regi,trade)       "Total trade amounts from sum of respective markets"
 ;
 
 *** EOF ./modules/24_trade/standard/declarations.gms

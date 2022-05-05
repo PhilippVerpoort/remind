@@ -10,7 +10,7 @@
  
 *ML*2015-02-04* calculate current account
 *LB* needed for decomposition script
-p80_curracc(ttot, regi) =  SUM(trade$(NOT tradeSe(trade)), pm_pvp(ttot,trade)/ max(pm_pvp(ttot,"good"),sm_eps) * (vm_Xport.l(ttot,regi,trade)- vm_Mport.l(ttot,regi,trade))  );
+p80_curracc(ttot, regi) =  SUM(mrktsPool, pm_pvp(ttot,mrktsPool)/ max(pm_pvp(ttot,"good"),sm_eps) * (vm_XportMrkt.l(ttot,regi,mrktsPool)- vm_MportMrkt.l(ttot,regi,mrktsPool))  );
 
 p80_taxrev0(ttot,regi)$( (ttot.val ge max(2010,cm_startyear)) and (pm_SolNonInfes(regi) eq 1) ) = vm_taxrev.l(ttot,regi);
 
@@ -21,47 +21,47 @@ p80_normalize0(ttot,regi,"good")$(ttot.val ge 2005) = max(vm_cons.l(ttot,regi)$(
 *p80_normalize0(ttot,regi,"perm")$(ttot.val ge 2005) = max(abs(pm_shPerm(ttot,regi) * pm_emicapglob(ttot)) , sm_eps);
 p80_normalize0(ttot,regi,"perm")$(ttot.val ge 2005) = max(abs(pm_shPerm(ttot,regi) * pm_emicapglob("2050")) , sm_eps);
 ***$ifi %emicapregi% == "budget" p80_normalize0(ttot,regi,"perm")$(trtot.val ge 2005) = p_emi_budget1_reg(regi)/(sm_endBudgetCO2eq - s_t_start);
-p80_normalize0(ttot,regi,tradePe)$(ttot.val ge 2005) = max(0.5 * (sum(rlf, vm_fuExtr.l(ttot,regi,tradePe,rlf)) + vm_prodPe.l(ttot,regi,tradePe))$(pm_SolNonInfes(regi) eq 1)
-                                                        + p80_normalize0(ttot,regi,tradePe)$(pm_SolNonInfes(regi) eq 0) ,sm_eps);
+p80_normalize0(ttot,regi,mrktsPoolPE)$(ttot.val ge 2005) = max(0.5 * (sum(rlf, vm_fuExtr.l(ttot,regi,mrktsPoolPE,rlf)) + vm_prodPe.l(ttot,regi,mrktsPoolPE))$(pm_SolNonInfes(regi) eq 1)
+                                                        + p80_normalize0(ttot,regi,mrktsPoolPE)$(pm_SolNonInfes(regi) eq 0) ,sm_eps);
 
 
 ***calculate residual surplus on the markets
 loop(ttot$(ttot.val ge 2005),
-  loop(trade$(NOT tradeSe(trade)),
-     p80_surplus(ttot,trade,iteration) = sum(regi, (vm_Xport.l(ttot,regi,trade) - vm_Mport.l(ttot,regi,trade))$(pm_SolNonInfes(regi) eq 1)
-                                               + (pm_Xport0(ttot,regi,trade) - p80_Mport0(ttot,regi,trade) )$(pm_SolNonInfes(regi) eq 0) );
+  loop(mrktsPool,
+     p80_surplus(ttot,mrktsPool,iteration) = sum(regi, (vm_Xport.l(ttot,regi,mrktsPool) - vm_Mport.l(ttot,regi,mrktsPool))$(pm_SolNonInfes(regi) eq 1)
+                                               + (pm_Xport0(ttot,regi,mrktsPool) - p80_Mport0(ttot,regi,mrktsPool) )$(pm_SolNonInfes(regi) eq 0) );
       ); 
 ); 
 
 ***calculate aggregated intertemporal market volumes - used in calculation of price corrections later on  
-loop(trade$(NOT tradeSe(trade)),
-       p80_normalizeLT(trade) = sum(ttot$(ttot.val ge 2005), sum(regi, pm_pvp(ttot,trade) * pm_ts(ttot) *  p80_normalize0(ttot,regi,trade) ));
-     if (p80_normalizeLT(trade) = 0, p80_normalizeLT(trade) = sm_eps);
+loop(mrktsPool),
+       p80_normalizeLT(mrktsPool) = sum(ttot$(ttot.val ge 2005), sum(regi, pm_pvp(ttot,mrktsPool) * pm_ts(ttot) *  p80_normalize0(ttot,regi,mrktsPool) ));
+     if (p80_normalizeLT(mrktsPool) = 0, p80_normalizeLT(mrktsPool) = sm_eps);
     );
 
 *LB* calculate price correction terms
-p80_etaLT_correct(trade,iteration)$(NOT tradeSe(trade)) = 
-          p80_etaLT(trade) *
-         sum(ttot2$(ttot2.val ge cm_startyear), pm_pvp(ttot2,trade) * pm_ts(ttot2) * p80_surplus(ttot2,trade,iteration) )
-        / p80_normalizeLT(trade);
+p80_etaLT_correct(mrktsPool,iteration) = 
+          p80_etaLT(mrktsPool) *
+         sum(ttot2$(ttot2.val ge cm_startyear), pm_pvp(ttot2,mrktsPool) * pm_ts(ttot2) * p80_surplus(ttot2,mrktsPool,iteration) )
+        / p80_normalizeLT(mrktsPool);
 
-p80_etaST_correct(ttot,trade,iteration)$((ttot.val ge 2005) AND (NOT tradeSe(trade))) = 
-           p80_etaST(trade)    
-         * ( (  (1-sm_fadeoutPriceAnticip) + sm_fadeoutPriceAnticip * sqrt(pm_pvp(ttot,"good")/pm_pvp("2100","good"))  )$(sameas(trade,"perm")) + 1$(NOT sameas(trade,"perm")) )    
-      * ((sm_fadeoutPriceAnticip + (1-sm_fadeoutPriceAnticip) * (pm_pvp(ttot,"good")/pm_pvp('2040',"good")) )$(sameas(trade,"perm")) + 1$(NOT sameas(trade,"perm")) )
-      * ((sm_fadeoutPriceAnticip + (1-sm_fadeoutPriceAnticip) * (pm_pvp(ttot,trade)/pm_pvp('2050',trade)) )$(tradePe(trade)) + 1$(NOT tradePe(trade)) )
-         * p80_surplus(ttot,trade,iteration)
-         / max(sm_eps , sum(regi, p80_normalize0(ttot,regi,trade)));
+p80_etaST_correct(ttot,mrktsPool,iteration)$(ttot.val ge 2005) = 
+           p80_etaST(mrktsPool)    
+         * ( (  (1-sm_fadeoutPriceAnticip) + sm_fadeoutPriceAnticip * sqrt(pm_pvp(ttot,"good")/pm_pvp("2100","good"))  )$(sameas(mrktsPool,"perm")) + 1$(NOT sameas(mrktsPool,"perm")) )    
+      * ((sm_fadeoutPriceAnticip + (1-sm_fadeoutPriceAnticip) * (pm_pvp(ttot,"good")/pm_pvp('2040',"good")) )$(sameas(mrktsPool,"perm")) + 1$(NOT sameas(mrktsPool,"perm")) )
+      * ((sm_fadeoutPriceAnticip + (1-sm_fadeoutPriceAnticip) * (pm_pvp(ttot,mrktsPool)/pm_pvp('2050',mrktsPool)) )$(mrktsPoolPE(mrktsPool)) + 1$(NOT mrktsPoolPE(mrktsPool)) )
+         * p80_surplus(ttot,mrktsPool,iteration)
+         / max(sm_eps , sum(regi, p80_normalize0(ttot,regi,mrktsPool)));
 
 *RP* add a stronger push to the price adjustment if convergence doesn't happen for an extended amount of iterations:
-p80_etaST_correct_safecopy(ttot,trade,iteration)$(NOT tradeSe(trade)) = p80_etaST_correct(ttot,trade,iteration); !! first make a copy of the initial adjustment values
+p80_etaST_correct_safecopy(ttot,mrktsPool,iteration) = p80_etaST_correct(ttot,mrktsPool,iteration); !! first make a copy of the initial adjustment values
 
 *RP* track sign of the surplus
 if(iteration.val > 2, 
   loop(ttot$(ttot.val ge 2005),
-    loop(trade$(tradePe(trade) OR sameas(trade,"good") ),
-      if( abs(p80_surplus(ttot,trade,iteration)) gt p80_surplusMaxTolerance(trade),
-	    o80_SurplusOverTolerance(ttot,trade,iteration) = Sign(p80_surplus(ttot,trade,iteration) );
+    loop(mrktsPool$(mrktsPoolPE(mrktsPool) OR sameas(mrktsPool,"good") ),
+      if( abs(p80_surplus(ttot,mrktsPool,iteration)) gt p80_surplusMaxTolerance(mrktsPool),
+	    o80_SurplusOverTolerance(ttot,mrktsPool,iteration) = Sign(p80_surplus(ttot,mrktsPool,iteration) );
 	  );
     );
   );
@@ -70,12 +70,12 @@ if(iteration.val > 2,
 *RP* track continued surplusses with the same sign (to show where convergence is too slow)
 if(iteration.val > 2, 
   loop(ttot$(ttot.val ge 2005),
-    loop(trade$(tradePe(trade) OR sameas(trade,"good") ),
-      if( ( Sign(p80_surplus(ttot,trade,iteration) ) eq Sign(p80_surplus(ttot,trade,iteration-1) ) ) AND 
-	  ( abs(p80_surplus(ttot,trade,iteration)) gt p80_surplusMaxTolerance(trade) ) ,
-        o80_trackSurplusSign(ttot,trade,iteration) = o80_trackSurplusSign(ttot,trade,iteration-1) +1;	  
+    loop(mrktsPool$(mrktsPoolPE(mrktsPool) OR sameas(mrktsPool,"good") ),
+      if( ( Sign(p80_surplus(ttot,mrktsPool,iteration) ) eq Sign(p80_surplus(ttot,mrktsPool,iteration-1) ) ) AND 
+	  ( abs(p80_surplus(ttot,mrktsPool,iteration)) gt p80_surplusMaxTolerance(mrktsPool) ) ,
+        o80_trackSurplusSign(ttot,mrktsPool,iteration) = o80_trackSurplusSign(ttot,mrktsPool,iteration-1) +1;	  
 	  else
-	    o80_trackSurplusSign(ttot,trade,iteration) = 0;
+	    o80_trackSurplusSign(ttot,mrktsPool,iteration) = 0;
 	  );
     );
   );
@@ -83,30 +83,30 @@ if(iteration.val > 2,
 
 if(iteration.val > 15,
   loop(ttot$(ttot.val ge 2005),
-    loop(trade$(tradePe(trade) OR sameas(trade,"good")),
-	  if( abs(p80_surplus(ttot,trade,iteration)) gt p80_surplusMaxTolerance(trade) , 
+    loop(mrktsPool$(mrktsPoolPE(mrktsPool) OR sameas(mrktsPool,"good")),
+	  if( abs(p80_surplus(ttot,mrktsPool,iteration)) gt p80_surplusMaxTolerance(mrktsPool) , 
         if( ( abs( sum(iteration2$( (iteration2.val le iteration.val) AND (iteration2.val ge (iteration.val - 4))),      
-                  p80_surplus(ttot,trade,iteration2)          !! this sum should ensure the additional price adjustment only happens if the surplus was always off the same sign
+                  p80_surplus(ttot,mrktsPool,iteration2)          !! this sum should ensure the additional price adjustment only happens if the surplus was always off the same sign
                 )
-              ) ge ( 5 * p80_surplusMaxTolerance(trade) ) ) AND ( o80_trackSurplusSign(ttot,trade,iteration) ge 5 ) , !! check if surplus was out of the target range for 5 consecutive iterations
-          p80_etaST_correct(ttot,trade,iteration) = 4 * p80_etaST_correct(ttot,trade,iteration);
-          o80_counter_iteration_trade_ttot(ttot,trade,iteration) = 1;
+              ) ge ( 5 * p80_surplusMaxTolerance(mrktsPool) ) ) AND ( o80_trackSurplusSign(ttot,mrktsPool,iteration) ge 5 ) , !! check if surplus was out of the target range for 5 consecutive iterations
+          p80_etaST_correct(ttot,mrktsPool,iteration) = 4 * p80_etaST_correct(ttot,mrktsPool,iteration);
+          o80_counter_iteration_trade_ttot(ttot,mrktsPool,iteration) = 1;
 		  
 		  if(iteration.val gt 20,      !! only start checking if a stronger push is necessary a few iterations later, so that step 1 could potentially show an effect
 		    if( ( abs( sum(iteration2$( (iteration2.val le iteration.val) AND (iteration2.val ge (iteration.val - 9))),
-                         p80_surplus(ttot,trade,iteration2)
+                         p80_surplus(ttot,mrktsPool,iteration2)
                        )
-                  ) ge ( 10 * p80_surplusMaxTolerance(trade)) ) AND ( o80_trackSurplusSign(ttot,trade,iteration) ge 10 ), !! check if surplus was out of the target range for 10 consecutive iterations
-              p80_etaST_correct(ttot,trade,iteration) = 2 * p80_etaST_correct(ttot,trade,iteration);
-              o80_counter_iteration_trade_ttot(ttot,trade,iteration) = 2;
+                  ) ge ( 10 * p80_surplusMaxTolerance(mrktsPool)) ) AND ( o80_trackSurplusSign(ttot,mrktsPool,iteration) ge 10 ), !! check if surplus was out of the target range for 10 consecutive iterations
+              p80_etaST_correct(ttot,mrktsPool,iteration) = 2 * p80_etaST_correct(ttot,mrktsPool,iteration);
+              o80_counter_iteration_trade_ttot(ttot,mrktsPool,iteration) = 2;
 		      
 			  if(iteration.val gt 25,   !! only start checking if a stronger push is necessary a few iterations later, so that step 1&2 could potentially show an effect
 		        if( ( abs( sum(iteration2$( (iteration2.val le iteration.val) AND (iteration2.val ge (iteration.val - 14))),
-                             p80_surplus(ttot,trade,iteration2)
+                             p80_surplus(ttot,mrktsPool,iteration2)
                            )
-                      ) ge ( 15 * p80_surplusMaxTolerance(trade)) ) AND ( o80_trackSurplusSign(ttot,trade,iteration) ge 15 ), !! check if surplus was out of the target range for 15 consecutive iterations
-                  p80_etaST_correct(ttot,trade,iteration) = 2 * p80_etaST_correct(ttot,trade,iteration);
-                  o80_counter_iteration_trade_ttot(ttot,trade,iteration) = 3;
+                      ) ge ( 15 * p80_surplusMaxTolerance(mrktsPool)) ) AND ( o80_trackSurplusSign(ttot,mrktsPool,iteration) ge 15 ), !! check if surplus was out of the target range for 15 consecutive iterations
+                  p80_etaST_correct(ttot,mrktsPool,iteration) = 2 * p80_etaST_correct(ttot,mrktsPool,iteration);
+                  o80_counter_iteration_trade_ttot(ttot,mrktsPool,iteration) = 3;
                 );
               );
 			);
@@ -119,24 +119,24 @@ if(iteration.val > 15,
 
 
 ***calculate prices for next iteration 
-p80_pvp_itr(ttot,trade,iteration+1)$((ttot.val ge cm_startyear) AND (NOT tradeSe(trade))) = 
- pm_pvp(ttot,trade)
+p80_pvp_itr(ttot,mrktsPool,iteration+1)$(ttot.val ge cm_startyear) = 
+ pm_pvp(ttot,mrktsPool)
  * max(0.05,                                                  !! prevent prices from turning negative by limiting extreme prices corrections
-       (1 - p80_etaLT_correct(trade,iteration)
-        - p80_etaST_correct(ttot,trade,iteration)
+       (1 - p80_etaLT_correct(mrktsPool,iteration)
+        - p80_etaST_correct(ttot,mrktsPool,iteration)
        )
       )
      ;
 
 *AJS* feed updated prices and quantities into the next iteration:
 *ML* adjustments in case of infeasibilities (increase import)
-loop(trade$(NOT tradeSe(trade)),
+loop(mrktsPool,
     loop(regi,
 	loop(ttot$(ttot.val ge cm_startyear),
-	    pm_pvp(ttot,trade)  = p80_pvp_itr(ttot,trade,iteration+1);
-	    pm_Xport0(ttot,regi,trade)$(pm_SolNonInfes(regi) eq 1)  = vm_Xport.l(ttot,regi,trade);
-	    p80_Mport0(ttot,regi,trade)$(pm_SolNonInfes(regi) eq 1) = vm_Mport.l(ttot,regi,trade);
-	    p80_Mport0(ttot,regi,trade)$(pm_SolNonInfes(regi) eq 0) = 1.2 * vm_Mport.l(ttot,regi,trade);	    
+	    pm_pvp(ttot,mrktsPool)  = p80_pvp_itr(ttot,mrktsPool,iteration+1);
+	    pm_Xport0(ttot,regi,mrktsPool)$(pm_SolNonInfes(regi) eq 1)  = vm_Xport.l(ttot,regi,mrktsPool);
+	    p80_Mport0(ttot,regi,mrktsPool)$(pm_SolNonInfes(regi) eq 1) = vm_Mport.l(ttot,regi,mrktsPool);
+	    p80_Mport0(ttot,regi,mrktsPool)$(pm_SolNonInfes(regi) eq 0) = 1.2 * vm_Mport.l(ttot,regi,mrktsPool);	    
 	);
     );
 );
@@ -148,27 +148,27 @@ p80_taxrev_agg(ttot,iteration)$(ttot.val ge 2005) = sum(regi,vm_taxrev.l(ttot,re
 
 
 *AJS* calculate maximum residual surplusses on markets
-p80_surplusMax(trade,iteration,ttot)$((ttot.val ge cm_startyear) AND (NOT tradeSe(trade))) = smax(ttot2$(ttot2.val ge cm_startyear AND ttot2.val le ttot.val), abs(p80_surplus(ttot2,trade,iteration)));
+p80_surplusMax(mrktsPool,iteration,ttot)$(ttot.val ge cm_startyear) = smax(ttot2$(ttot2.val ge cm_startyear AND ttot2.val le ttot.val), abs(p80_surplus(ttot2,mrktsPool,iteration)));
 
 ***from this, relative residual surplusses.  
-p80_surplusMaxRel(trade,iteration,ttot)$((ttot.val ge cm_startyear) AND (NOT tradeSe(trade))) = 100 * smax(ttot2$(ttot2.val ge cm_startyear AND ttot2.val le ttot.val), abs(p80_surplus(ttot2,trade,iteration)) / sum(regi, p80_normalize0(ttot2,regi,trade)));
+p80_surplusMaxRel(mrktsPool,iteration,ttot)$(ttot.val ge cm_startyear) = 100 * smax(ttot2$(ttot2.val ge cm_startyear AND ttot2.val le ttot.val), abs(p80_surplus(ttot2,mrktsPool,iteration)) / sum(regi, p80_normalize0(ttot2,regi,mrktsPool)));
 
-p80_surplusMax2100(trade)$(NOT tradeSe(trade)) = p80_surplusMax(trade,iteration,"2100");
+p80_surplusMax2100(mrktsPool) = p80_surplusMax(mrktsPool,iteration,"2100");
 
 
 ***convergence indicators 
-loop(trade$(NOT tradeSe(trade)),
-    p80_defic_trade(trade) = 1/pm_pvp("2005","good") *
+loop(mrktsPool),
+    p80_defic_trade(mrktsPool) = 1/pm_pvp("2005","good") *
 	sum(ttot$(ttot.val ge 2005),   pm_ts(ttot) * (
-	    abs(p80_surplus(ttot,trade,iteration)) * pm_pvp(ttot,trade)
-	    + sum(regi, abs(p80_taxrev0(ttot,regi)) * pm_pvp(ttot,"good"))$(sameas(trade,"good") and (ttot.val ge max(2010,cm_startyear)) )  
-	    + sum(regi, abs(vm_costAdjNash.l(ttot,regi)) * pm_pvp(ttot,"good"))$(sameas(trade,"good") and (ttot.val ge 2005) )  
+	    abs(p80_surplus(ttot,mrktsPool,iteration)) * pm_pvp(ttot,mrktsPool)
+	    + sum(regi, abs(p80_taxrev0(ttot,regi)) * pm_pvp(ttot,"good"))$(sameas(mrktsPool,"good") and (ttot.val ge max(2010,cm_startyear)) )  
+	    + sum(regi, abs(vm_costAdjNash.l(ttot,regi)) * pm_pvp(ttot,"good"))$(sameas(mrktsPool,"good") and (ttot.val ge 2005) )  
 
 	)
     );
 );
 p80_defic_sum("1") = 1;
-p80_defic_sum(iteration) = sum(trade$(NOT tradeSe(trade)),  p80_defic_trade(trade)); 
+p80_defic_sum(iteration) = sum(mrktsPool),  p80_defic_trade(mrktsPool)); 
 p80_defic_sum_rel(iteration) =  100 * p80_defic_sum(iteration) / (p80_normalizeLT("good")/pm_pvp("2005","good"));
 
 
@@ -176,7 +176,7 @@ p80_defic_sum_rel(iteration) =  100 * p80_defic_sum(iteration) / (p80_normalizeL
 ***adjust parameters for next iteration 
 ***Decide on when to fade out price anticipation terms (doing this too early leads to diverging markets)
 ***if markets are reasonably cleared
-if( (smax(tradePe,p80_surplusMax(tradePe,iteration,'2150')) lt (10 * 0.05))   
+if( (smax(mrktsPoolPE,p80_surplusMax(mrktsPoolPE,iteration,'2150')) lt (10 * 0.05))   
     AND ( p80_surplusMax("good",iteration,'2150') lt (10 * 0.1) )            !! 
     AND ( p80_surplusMax("perm",iteration,'2150') lt (5 * 0.2) )
     AND (s80_fadeoutPriceAnticipStartingPeriod eq 0),                  !! as long as we are not fading out already
@@ -198,22 +198,22 @@ p80_messageShow(convMessage80) = NO;
 p80_messageFailedMarket(ttot,all_enty) = NO;
 
 ***criterion ""surplus": are we converged yet?
-loop(trade$(NOT tradeSe(trade)),
- if(p80_surplusMax(trade,iteration,"2100") gt p80_surplusMaxTolerance(trade),
+loop(mrktsPool),
+ if(p80_surplusMax(mrktsPool,iteration,"2100") gt p80_surplusMaxTolerance(mrktsPool),
      s80_bool=0;                 
      p80_messageShow("surplus") = YES;
       loop(ttot$((ttot.val ge cm_startyear) and (ttot.val le 2100)),
-       if( (abs(p80_surplus(ttot,trade,iteration)) gt p80_surplusMaxTolerance(trade) ),
-	   p80_messageFailedMarket(ttot,trade) = YES;
+       if( (abs(p80_surplus(ttot,mrktsPool,iteration)) gt p80_surplusMaxTolerance(mrktsPool) ),
+	   p80_messageFailedMarket(ttot,mrktsPool) = YES;
        );
       );
  );
- if(p80_surplusMax(trade,iteration,"2150") gt 10 * p80_surplusMaxTolerance(trade),
+ if(p80_surplusMax(mrktsPool,iteration,"2150") gt 10 * p80_surplusMaxTolerance(mrktsPool),
      s80_bool=0;
      p80_messageShow("surplus") = YES;
       loop(ttot$((ttot.val ge cm_startyear) and (ttot.val gt 2100)),
-       if( (abs(p80_surplus(ttot,trade,iteration)) gt p80_surplusMaxTolerance(trade) ),
-	   p80_messageFailedMarket(ttot,trade) = YES;
+       if( (abs(p80_surplus(ttot,mrktsPool,iteration)) gt p80_surplusMaxTolerance(mrktsPool) ),
+	   p80_messageFailedMarket(ttot,mrktsPool) = YES;
        );
       );
  );
@@ -556,7 +556,7 @@ if(cm_abortOnConsecFail, !! execute only if consecutive failures switch is non-z
 
 
 ***Fade out LT correction terms, they should only be important in the first iterations and might interfere with ST corrections.
-***p80_etaLT(trade) = p80_etaLT(trade)*0.5;
+***p80_etaLT(mrktsPool) = p80_etaLT(mrktsPool)*0.5;
 
                 
 

@@ -6,7 +6,7 @@
 *** |  Contact: remind@pik-potsdam.de
 *** SOF ./modules/24_trade/standard/presolve.gms
 
-pm_Xport0(ttot,regi,tradePe) = vm_Xport.l(ttot,regi,tradePe);
+pm_XportMrkt0(ttot,regi,mrktsPoolPE) = vm_Xport.l(ttot,regi,mrktsPoolPE);
 
 vm_costTradeCap.fx(ttot,all_regi,tradeCap) = 0.0;
 vm_capacityTradeBalance.fx(ttot,all_regi) = 0.0;

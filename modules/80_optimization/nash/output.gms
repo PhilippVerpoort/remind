@@ -12,9 +12,9 @@ file prices_NASH;
 put prices_NASH;
 put '*AJS* file was written by nash module, containing price paths. Nash runs dont depend on it. Copy to 80_optimization/nash/input/prices_NASH.inc in case you experience convergence problems though.';
 put /;
-loop(trade$(NOT tradeSe(trade)),
+loop(mrktsPool,
     loop(ttot$(ttot.val ge 2005),
-         put 'p80_pvpFallback("'ttot.te(ttot):0:0'","'trade.tl:0:0'")=' pm_pvp(ttot,trade):12:8, ';'; put /;
+         put 'p80_pvpFallback("'ttot.te(ttot):0:0'","'mrktsPool.tl:0:0'")=' pm_pvp(ttot,mrktsPool):12:8, ';'; put /;
     );
 );
 putclose prices_NASH;
@@ -28,16 +28,16 @@ put 'Scenario',',','Region',',','Year',',','Iteration',',',"Market",",","surplus
 put /;
 loop(ttot$(ttot.val ge 2005),
     loop(iteration$(iteration.val le cm_iteration_max),
-	loop(trade$(NOT tradeSe(trade)),
+	loop(mrktsPool,
 	    put '%c_expname%',",";
 	    put "glob",",";
 	    put ttot.val:0:0,',';
 	    put iteration.val:0:0,',';
-	    put trade.tl,",";
-	    put p80_surplus(ttot,trade,iteration):12:8,",";
-	    put p80_pvp_itr(ttot,trade,iteration):12:8,"," ;
-	    put p80_surplusMax(trade,iteration,ttot):12:8,",";
-	    put p80_surplusMaxRel(trade,iteration,ttot):12:8,",";
+	    put mrktsPool.tl,",";
+	    put p80_surplus(ttot,mrktsPool,iteration):12:8,",";
+	    put p80_pvp_itr(ttot,mrktsPool,iteration):12:8,"," ;
+	    put p80_surplusMax(mrktsPool,iteration,ttot):12:8,",";
+	    put p80_surplusMaxRel(mrktsPool,iteration,ttot):12:8,",";
 	    put /;
 	);
     );

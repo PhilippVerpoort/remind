@@ -7,8 +7,8 @@
 *** SOF ./modules/24_trade/standard/bounds.gms
 
 *** set Mport and Xport positive
-vm_Mport.lo(ttot,regi,tradePe)$(ttot.val ge 2005) = 0;
-vm_Xport.lo(ttot,regi,tradePe)$(ttot.val ge 2005) = 0;
+vm_Mport.lo(ttot,regi,tradePoolPE)$(ttot.val ge 2005) = 0;
+vm_Xport.lo(ttot,regi,tradePoolPE)$(ttot.val ge 2005) = 0;
 
 
 
