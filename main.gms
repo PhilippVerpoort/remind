@@ -1581,6 +1581,9 @@ $setGlobal c_empty_model   off    !! def = off
 *' * parallel  - all regions are run an parallel
 *' * debug     - all regions are run in a sequence and the lst-file will contain information on infeasiblities
 $setGlobal cm_nash_mode  parallel      !! def = parallel
+*** cm_gasftrec_switch_on      "switch to turn on gasftrec techs"
+*** enable gasftrec techs to avoid Gas+CCS -> H2+CO2 -> liqs
+$setglobal cm_gasftrec_switch_on   off  !! off
 
 $setglobal cm_secondary_steel_bound  scenario   !! def = scenario
 $setglobal c_GDPpcScen  SSP2EU     !! def = gdp_SSP2   (automatically adjusted by start_run() based on GDPscen)
