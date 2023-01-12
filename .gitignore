@@ -1,5 +1,12 @@
 # .gitignore file for the remind folder.
 
+
+/.idea/
+/config/scenario_config_H2global_sensitivity.csv
+/poetry.lock
+/pyproject.toml
+
+
 # !!!
 # Remember:
 # 1: Patterns listed below are used recursively in the entire git folder
