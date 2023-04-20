@@ -10,7 +10,7 @@ import csv
 
 # list of levers and switches
 levers = {
-    'biomass': ['cm_bioenergymaxscen', 'cm_1stgen_phaseout'],
+    'biomass': ['cm_maxProdBiolc'],
     'ccsdepl': ['c_ccsinjecratescen'],
     'direlec': ['cm_CESMkup_build', 'cm_build_H2costAddH2Inv', 'cm_CESMkup_ind', 'cm_steel_secondary_max_share_scenario', 'cm_FEtax_trajectory_rel', 'cm_EDGEtr_scen'],
     'greenh2': ['cm_PriceDurSlope_elh2'],
